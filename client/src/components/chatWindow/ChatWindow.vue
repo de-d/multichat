@@ -3,7 +3,7 @@
 </script>
 
 <template>
-  <div class="flex flex-col w-[1100px] h-[910px] border-l-1 border-[#1b1b1b] rounded-r-lg overflow-hidden">
+  <div class="flex flex-col w-[1100px] h-[910px] border-l-1 border-[#1b1b1b] bg-[#2e2e2e] rounded-r-lg overflow-hidden">
     <div class="flex justify-between items-center h-[60px] p-[20px] bg-[#252525]">
       <div class="flex flex-col items-start">
         <p>Челик челиков</p>

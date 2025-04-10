@@ -135,7 +135,7 @@ const sendMessage = () => {
       </button>
     </div>
   </div> -->
-  <div class="flex flex-row rounded-[20px] shadow-[0_6px_50px_rgba(255,255,255,0.1)] bg-[#2e2e2e]">
+  <div class="flex flex-row rounded-[20px] shadow-[0_6px_50px_rgba(255,255,255,0.1)] bg-[#252525]">
     <SideBar />
     <ChatWindow />
   </div>
