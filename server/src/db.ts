@@ -1,6 +1,9 @@
 import * as sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
 import * as path from "path";
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 let dbInstance: Database | null = null;
 const dbPath = path.resolve(__dirname, "database.sqlite");
@@ -13,7 +16,6 @@ export async function connectDB(): Promise<Database> {
       mode: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     });
 
-    // Включаем журналирование WAL для лучшей производительности
     await dbInstance.exec("PRAGMA journal_mode = WAL");
   }
   return dbInstance;
@@ -23,29 +25,52 @@ export async function initDB(): Promise<void> {
   try {
     const db = await connectDB();
 
-    // Проверяем существование таблицы
-    const tableExists = await db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='messages'");
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        avatar TEXT,
+        password TEXT NOT NULL
+      );
 
-    if (!tableExists) {
-      await db.exec(`
-        CREATE TABLE messages (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          username TEXT NOT NULL,
-          message TEXT NOT NULL,
-          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
+      CREATE TABLE IF NOT EXISTS chats (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT
+      );
 
-      // Добавляем тестовое сообщение
-      await db.run("INSERT INTO messages (username, message) VALUES (?, ?)", ["System", "Database initialized"]);
+      CREATE TABLE IF NOT EXISTS user_chats (
+        user_id INTEGER,
+        chat_id INTEGER,
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(chat_id) REFERENCES chats(id),
+        PRIMARY KEY (user_id, chat_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chat_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        message TEXT NOT NULL,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        read INTEGER DEFAULT 0,
+        FOREIGN KEY(chat_id) REFERENCES chats(id),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+      );
+    `);
+
+    // Создаём тестового пользователя и чат, если пусто
+    const existingUsers = await db.get("SELECT COUNT(*) as count FROM users");
+    if (existingUsers.count === 0) {
+      await db.run("INSERT INTO users (username, avatar, password) VALUES (?, ?, ?)", ["admin", "https://i.pravatar.cc/150?img=1", "admin123"]);
+    }
+
+    const existingChats = await db.get("SELECT COUNT(*) as count FROM chats");
+    if (existingChats.count === 0) {
+      await db.run("INSERT INTO chats (name) VALUES (?)", ["General"]);
     }
 
     console.log("Database initialized ✅");
     console.log(`Database file: ${dbPath}`);
-
-    // Проверяем содержимое таблицы
-    const messageCount = await db.get("SELECT COUNT(*) as count FROM messages");
-    console.log(`Messages in database: ${messageCount.count}`);
   } catch (err) {
     console.error("Database initialization error:", err);
     throw err;
