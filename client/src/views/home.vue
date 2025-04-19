@@ -17,7 +17,7 @@ import Logo from '../components/reg-logo.vue'
           Регистрация
         </button>
       </RouterLink>
-      <RouterLink to="/chat">
+      <RouterLink to="/login">
         <button
           class="w-[150px] h-[40px] font-bold text-[#ffffff] box-border border-2 border-dashed border-[#09bb80] rounded-[20px] cursor-pointer
               bg-gradient-to-r from-[#09bb80] to-[#09bb80] bg-[length:0%_100%] bg-right hover:bg-[length:100%_100%] hover:border-[#09bb80]
