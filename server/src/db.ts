@@ -1,7 +1,7 @@
-import * as sqlite3 from "sqlite3";
+import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
-import * as path from "path";
-import * as dotenv from "dotenv";
+import path from "path";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -27,15 +27,17 @@ export async function initDB(): Promise<void> {
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        avatar TEXT,
-        password TEXT NOT NULL
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      avatar TEXT,
+      password TEXT NOT NULL,
+      is_online INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS chats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT
+        name TEXT,
+        is_group INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS user_chats (
@@ -50,15 +52,29 @@ export async function initDB(): Promise<void> {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         chat_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
-        message TEXT NOT NULL,
+        message TEXT,
+        type TEXT DEFAULT 'text', -- text | image | video | audio | gif | file
+        media_url TEXT,
+        reply_to INTEGER, -- ID сообщения, на которое ответили
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        edited_at DATETIME,
+        deleted_at DATETIME,
         read INTEGER DEFAULT 0,
         FOREIGN KEY(chat_id) REFERENCES chats(id),
-        FOREIGN KEY(user_id) REFERENCES users(id)
+        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(reply_to) REFERENCES messages(id)
       );
+
+      CREATE TABLE IF NOT EXISTS media_files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message_id INTEGER,
+        type TEXT, -- "image", "audio", "video", "gif", etc.
+        file_path TEXT NOT NULL,
+        FOREIGN KEY(message_id) REFERENCES messages(id)
+      );
+
     `);
 
-    // Создаём тестового пользователя и чат, если пусто
     const existingUsers = await db.get("SELECT COUNT(*) as count FROM users");
     if (existingUsers.count === 0) {
       await db.run("INSERT INTO users (username, avatar, password) VALUES (?, ?, ?)", ["admin", "https://i.pravatar.cc/150?img=1", "admin123"]);
@@ -66,7 +82,7 @@ export async function initDB(): Promise<void> {
 
     const existingChats = await db.get("SELECT COUNT(*) as count FROM chats");
     if (existingChats.count === 0) {
-      await db.run("INSERT INTO chats (name) VALUES (?)", ["General"]);
+      await db.run("INSERT INTO chats (name, is_group) VALUES (?, ?)", ["General", 1]);
     }
 
     console.log("Database initialized ✅");
@@ -75,4 +91,14 @@ export async function initDB(): Promise<void> {
     console.error("Database initialization error:", err);
     throw err;
   }
+}
+
+export async function setUserOnline(userId: number) {
+  const db = await connectDB();
+  await db.run("UPDATE users SET is_online = 1 WHERE id = ?", userId);
+}
+
+export async function setUserOffline(userId: number) {
+  const db = await connectDB();
+  await db.run("UPDATE users SET is_online = 0 WHERE id = ?", userId);
 }
