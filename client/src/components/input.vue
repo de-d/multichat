@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, defineEmits } from 'vue'
+import { ref, watch } from 'vue'
 import { NInput, NSpace } from 'naive-ui'
 
 const props = defineProps<{

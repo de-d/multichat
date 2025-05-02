@@ -3,36 +3,7 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import Input from '../input.vue';
 import Chater from './chater.vue';
-
-interface User {
-  id: number;
-  username: string;
-  avatar: string;
-  is_online: boolean;
-}
-
-interface Message {
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
-
-interface Chat {
-  chatId: number;
-  partner: User;
-  lastMessage?: Message;
-  unreadCount: number;
-}
-
-interface FormattedChat {
-  avatar: string;
-  is_online: boolean;
-  username: string;
-  message: string;
-  time: string;
-  messageCount: number;
-  chatId: number;
-}
+import { Chat, FormattedChat } from '../../types';
 
 const searchValue = ref('')
 const chats = ref<FormattedChat[]>([])
