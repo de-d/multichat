@@ -6,10 +6,11 @@ export interface ChatMessage {
   username: string;
   message: string;
   timestamp: string;
+  userId?: number;
 }
 
 export interface Chat {
-  chatId: string;
+  chatId: number;
   partnerId: number;
   partner: {
     username: string;
@@ -22,13 +23,6 @@ export interface Chat {
   };
   unreadCount: number;
 }
-
-// Состояния
-const messages = ref<ChatMessage[]>([]);
-const username = ref("");
-const message = ref("");
-const chats = ref<Chat[]>([]);
-const connectionStatus = ref("disconnected");
 
 export function useChatSocket() {
   const messages = ref<ChatMessage[]>([]);
@@ -46,19 +40,15 @@ export function useChatSocket() {
     });
   };
 
-  const sendMessage = () => {
-    if (username.value.trim() && message.value.trim()) {
-      socket.emit(
-        "sendMessage",
-        {
-          username: username.value.trim(),
-          message: message.value.trim(),
-        },
-        () => {
-          message.value = "";
-        }
-      );
-    }
+  const sendMessage = (chatId: number, text: string) => {
+    const trimmedText = text.trim();
+    if (!trimmedText) return;
+
+    socket.emit("sendMessage", { chatId, message: trimmedText });
+  };
+
+  const joinChat = (chatId: number) => {
+    socket.emit("joinChat", chatId);
   };
 
   function handleBeforeUnload() {
@@ -71,7 +61,6 @@ export function useChatSocket() {
       socket.auth = { token };
     }
 
-    socket.connect();
     socket.connect();
     window.addEventListener("beforeunload", handleBeforeUnload);
 
@@ -142,6 +131,7 @@ export function useChatSocket() {
     message,
     connectionStatus,
     sendMessage,
+    joinChat,
     chats,
   };
 }
