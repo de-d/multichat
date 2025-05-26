@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { ref, watch, watchEffect, nextTick, computed } from 'vue'
 import { useChatSocket } from '../../utils/useChatSocket'
-import { FormattedChat } from '../../types'
+import data from 'emoji-mart-vue-fast/data/all.json'
+import { Picker, EmojiIndex } from "emoji-mart-vue-fast/src";
+import 'emoji-mart-vue-fast/css/emoji-mart.css'
+import { useChatStore } from '../../stores/chat';
 
+const chatStore = useChatStore()
 const { messages, sendMessage, joinChat } = useChatSocket()
 const messageValue = ref<string>('')
-const currentChatId = ref(3)
-const chats = ref<FormattedChat[]>([])
 const user = localStorage.getItem('currentUser')
 const messagesContainer = ref<HTMLElement | null>(null)
+const show = ref(false)
+const emojiIndex = new EmojiIndex(data)
 
-onMounted(() => {
-  joinChat(currentChatId.value)
+watchEffect(async () => {
+  if (chatStore.activeChatId) {
+    await joinChat(chatStore.activeChatId)
+  }
 })
 
 watch(messages, async () => {
@@ -22,9 +28,10 @@ watch(messages, async () => {
 }, { deep: true })
 
 function send() {
-  console.log('Отправляю сообщение:', { chatId: currentChatId.value, message: messageValue.value });
-  sendMessage(currentChatId.value, messageValue.value);
+  console.log('Отправляю сообщение:', { chatId: chatStore.activeChatId, message: messageValue.value });
+  sendMessage(chatStore.activeChatId, messageValue.value);
   messageValue.value = '';
+  show.value = !show
 }
 
 const currentUserId = computed(() => {
@@ -32,15 +39,29 @@ const currentUserId = computed(() => {
   console.log('Current User ID:', userData?.id);
   return userData ? userData.id : null;
 });
+
+const isChatterOnline = computed(() => {
+  const chatter = chatStore.activeChatterStatus;
+  return chatter === true ? 'Онлайн' : 'Оффлайн';
+})
+
+function addEmoji(emoji: any) {
+  messageValue.value += emoji.native
+}
+
 </script>
 
 <template>
   <div class="flex flex-col w-[1100px] h-[910px] border-l-1 border-[#1b1b1b] bg-[#2e2e2e] rounded-r-lg">
     <div class="flex justify-between items-center h-[60px] p-[20px] bg-[#252525]">
-      <div class="flex flex-col items-start">
-        <p>{{chats.find(chat => chat.chatId === currentChatId)?.username}}</p>
-        <p class="text-[#289ed5]">{{(chats.find(chat => chat.chatId === currentChatId)?.is_online, 'Онлайн', 'Оффлайн')
-        }}</p>
+      <div class="flex flex-row items-start">
+        <img :src="chatStore.activeChatterAvatar" alt="avatar" class="w-[40px] h-[40px] rounded-[50%]">
+        <div class="flex flex-col items-start ml-[10px]">
+          <p>{{ chatStore.activeChatterName }}</p>
+          <p class="text-[#289ed5]">
+            {{ isChatterOnline }}
+          </p>
+        </div>
       </div>
       <div class="flex items-center gap-[5px]">
         <button class="cursor-pointer">
@@ -56,9 +77,9 @@ const currentUserId = computed(() => {
       <div v-for="msg in messages" :key="`${msg.id}_${msg.timestamp}_${msg.userId}`"
         :class="['flex py-[2px]', msg.userId === currentUserId ? 'justify-end' : 'justify-start']">
         <div
-          :class="['bubble', msg.userId === currentUserId ? 'right' : 'left', 'max-w-[300px] px-[15px] py-[10px] relative']">
-          <div class="flex flex-row items-start gap-[5px]">
-            <div>
+          :class="['bubble', msg.userId === currentUserId ? 'right' : 'left', 'max-w-[400px] px-[15px] py-[10px] relative']">
+          <div class="flex flex-row items-end gap-[5px]">
+            <div class="max-w-[300px] wrap-break-word text-left">
               {{ msg.message }}
             </div>
             <div class="text-xs text-gray-400 mt-1">
@@ -67,9 +88,7 @@ const currentUserId = computed(() => {
           </div>
         </div>
       </div>
-
     </div>
-
     <div class="flex justify-between items-center w-full h-[60px] p-[20px] gap-[10px] bg-[#252525]">
       <label class="relative cursor-pointer flex items-center justify-center">
         <input type="file" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
@@ -78,10 +97,12 @@ const currentUserId = computed(() => {
       <input v-model="messageValue" placeholder="Сообщение..."
         class="flex-1 h-[30px] bg-transparent text-white border-none outline-none focus:outline-none"
         @keyup.enter="send" />
-      <button class="w-[25px] h-[25px] flex items-center justify-center">
+      <button class="w-[25px] h-[25px] flex items-center justify-center" @click="show = !show">
         <img src="../../assets/chat/emoji.svg" alt="Emoji"
           class="w-full h-full cursor-pointer hover:scale-110 hover:duration-200" />
       </button>
+      <picker v-if="show" :data="emojiIndex" set="apple" :show-preview="false" :skin="1"
+        class="absolute bottom-[100px] right-[300px]" @select="addEmoji" />
       <div class="relative w-[25px] h-[25px]">
         <Transition name="fade-scale" mode="out-in">
           <button v-if="messageValue.trim()" @click="send" class="absolute inset-0 flex items-center justify-center">
