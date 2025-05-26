@@ -40,7 +40,7 @@ const router = createRouter({
 });
 
 function isAuthenticated() {
-  return !!localStorage.getItem("token");
+  return !!localStorage.getItem("authToken");
 }
 
 router.beforeEach((to, from, next) => {
