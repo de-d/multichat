@@ -4,7 +4,11 @@ import axios from 'axios'
 import Input from '../input.vue';
 import Chater from './chater.vue';
 import { Chat, FormattedChat } from '../../types';
+import { useChatStore } from '../../stores/chat';
+import { useChatSocket } from '../../utils/useChatSocket'
 
+const chatStore = useChatStore()
+const { joinChat } = useChatSocket()
 const searchValue = ref('')
 const chats = ref<FormattedChat[]>([])
 
@@ -41,6 +45,15 @@ async function fetchChats() {
 onMounted(() => {
   fetchChats()
 })
+
+const setChat = async (chatId: number, avatar: string, username: string, status: boolean) => {
+  await joinChat(chatId)
+  chatStore.setActiveChatId(chatId)
+  chatStore.setActiveChatterAvatar(avatar)
+  chatStore.setActiveChatterName(username)
+  chatStore.setActiveChatterStatus(status)
+}
+
 </script>
 
 <template>
@@ -54,7 +67,7 @@ onMounted(() => {
     <div class="flex flex-col justify-between items-center w-full overflow-y-auto">
       <Chater v-for="chat in chats" :key="chat.chatId" :avatar="chat.avatar" :is_online="chat.is_online"
         :username="chat.username" :message="chat.message" :time="chat.time" :message-count="chat.messageCount"
-        @click="$emit('chatSelected', chat.chatId)" />
+        @click="setChat(chat.chatId, chat.avatar, chat.username, chat.is_online)" />
     </div>
   </div>
 </template>
