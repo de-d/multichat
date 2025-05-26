@@ -64,22 +64,22 @@ export function useChatSocket() {
     socket.connect();
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    socket.on("connect", () => {
+    socket.off("connect").on("connect", () => {
       console.log("✅ Соединение установлено:", socket.id);
       connectionStatus.value = "connected";
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.off("disconnect").on("disconnect", (reason) => {
       console.log("❌ Отключено:", reason);
       connectionStatus.value = "disconnected";
     });
 
-    socket.on("connect_error", (err) => {
+    socket.off("connect_error").on("connect_error", (err) => {
       console.error("Ошибка подключения:", err.message);
       setTimeout(() => socket.connect(), 1000);
     });
 
-    socket.on("welcome", (msg: string) => {
+    socket.off("welcome").on("welcome", (msg: string) => {
       messages.value.push({
         username: "System",
         message: msg,
@@ -88,24 +88,24 @@ export function useChatSocket() {
       scrollToBottom();
     });
 
-    socket.on("statusChange", ({ userId, isOnline }) => {
+    socket.off("statusChange").on("statusChange", ({ userId, isOnline }) => {
       const chat = chats.value.find((c) => c.partnerId === userId);
       if (chat) {
         chat.partner.is_online = isOnline;
       }
     });
 
-    socket.on("chatHistory", (chatMessages: ChatMessage[]) => {
+    socket.off("chatHistory").on("chatHistory", (chatMessages: ChatMessage[]) => {
       messages.value = chatMessages;
       scrollToBottom();
     });
 
-    socket.on("newMessage", (newMessage: ChatMessage) => {
+    socket.off("newMessage").on("newMessage", (newMessage: ChatMessage) => {
       messages.value.push(newMessage);
       scrollToBottom();
     });
 
-    socket.on("error", (err: string) => {
+    socket.off("error").on("error", (err: string) => {
       console.error("⚠️ Socket error:", err);
     });
   });
