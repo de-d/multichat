@@ -6,6 +6,9 @@ import Chater from './chater.vue';
 import { Chat, FormattedChat } from '../../types';
 import { useChatStore } from '../../stores/chat';
 import { useChatSocket } from '../../utils/useChatSocket'
+import Button from '../customButton.vue';
+import logoutIcon from '../../assets/logout.svg'
+import NewChatPopover from '../../components/newChatPopover.vue';
 
 const chatStore = useChatStore()
 const { joinChat } = useChatSocket()
@@ -54,6 +57,11 @@ const setChat = async (chatId: number, avatar: string, username: string, status:
   chatStore.setActiveChatterStatus(status)
 }
 
+function logout() {
+  localStorage.removeItem('authToken')
+  window.location.reload()
+}
+
 </script>
 
 <template>
@@ -64,10 +72,14 @@ const setChat = async (chatId: number, avatar: string, username: string, status:
       </button>
       <Input v-model="searchValue" size="tiny" type="text" round placeholder="Поиск" class="w-[310px] pb-[28px]" />
     </div>
-    <div class="flex flex-col justify-between items-center w-full overflow-y-auto">
+    <div class="flex-1 flex-col justify-between items-center w-full h-full overflow-y-auto">
       <Chater v-for="chat in chats" :key="chat.chatId" :avatar="chat.avatar" :is_online="chat.is_online"
         :username="chat.username" :message="chat.message" :time="chat.time" :message-count="chat.messageCount"
         @click="setChat(chat.chatId, chat.avatar, chat.username, chat.is_online)" />
+    </div>
+    <div class="flex justify-between items-center w-full h-[60px] p-[20px] pb-[40px]">
+      <NewChatPopover />
+      <Button label="Выйти" color="red" :icon="logoutIcon" @click="logout" />
     </div>
   </div>
 </template>
