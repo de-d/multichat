@@ -29,4 +29,14 @@ interface FormattedChat {
   chatId: number;
 }
 
-export { User, Message, Chat, FormattedChat };
+interface StartChatResponse {
+  chatId: number;
+  partner: {
+    id: number;
+    username: string;
+    avatar: string;
+    is_online: boolean;
+  };
+}
+
+export { User, Message, Chat, FormattedChat, StartChatResponse };
